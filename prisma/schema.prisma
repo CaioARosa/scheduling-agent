@@ -1,0 +1,39 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Patient {
+  id           String        @id @default(uuid())
+  phone        String        @unique // WhatsApp number
+  name         String
+  email        String
+  observations String?       // Sensitive health notes (encrypted in application)
+  preferences  String?       // Patient preferences JSON (encrypted in application)
+  appointments Appointment[]
+  chatSessions ChatSession[]
+  createdAt    DateTime      @default(now())
+}
+
+model Appointment {
+  id              String   @id @default(uuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  googleEventId   String   @unique // ID returned by Google Calendar API
+  dateTime        DateTime
+  status          String   // PENDING, CONFIRMED, CANCELLED
+  reminderSentAt  DateTime?
+}
+
+model ChatSession {
+  id             String   @id @default(uuid())
+  patientId      String
+  patient         Patient  @relation(fields: [patientId], references: [id])
+  contextSummary String?  // Episodic conversation summary
+  currentState   String   // Flow status (e.g., IDLE, SELECTING_TIME, CRISIS)
+  updatedAt      DateTime @updatedAt
+}
